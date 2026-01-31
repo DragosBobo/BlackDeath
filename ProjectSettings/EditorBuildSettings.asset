@@ -8,12 +8,15 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/DragosScene/Menu.unity
     guid: 17971e50c9bd7284a928010eba60bcdd
   - enabled: 0
     path: Assets/Scenes/DragosScene/DragosScene.unity
     guid: 498451c6f6c9ac841b531d9eaadb17b3
+  - enabled: 1
+    path: Assets/Scenes/DragosScene/WinScene.unity
+    guid: a84dab3568e28954cb5acbe9563f6d1a
   - enabled: 1
     path: Assets/Scenes/MainScene.unity
     guid: 91b68dab97289c746a35105cee5d72ba
