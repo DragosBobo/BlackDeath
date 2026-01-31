@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 5228c984e5be7284d8d83c18096254dd
+guid: 61982c2c99063e44e9e4646d763c0439
 PrefabImporter:
   externalObjects: {}
   userData: 
@@ -7,8 +7,16 @@ PrefabImporter:
   assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
+<<<<<<< HEAD
   productId: 122225
   packageName: Lowpoly Medieval Peasants - Free - MEDIEVAL FANTASY SERIES
   packageVersion: 
   assetPath: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Mushrooms/PT_Caesars_Mushroom_01.prefab
   uploadId: 0
+=======
+  productId: 176809
+  packageName: Lowpoly Medieval Plague Doctor - Free Pack
+  packageVersion: 1.0
+  assetPath: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Mushrooms/PT_Caesars_Mushroom_01.prefab
+  uploadId: 575737
+>>>>>>> parent of 5e79ad6 (environment)

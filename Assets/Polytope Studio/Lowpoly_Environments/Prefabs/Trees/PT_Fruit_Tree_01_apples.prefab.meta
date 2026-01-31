@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: e05ae677c7b3bc546bd36b488586fb0c
+guid: fe0c38f5305f2e14ca7e033eed8192aa
 PrefabImporter:
   externalObjects: {}
   userData: 
@@ -7,8 +7,16 @@ PrefabImporter:
   assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
+<<<<<<< HEAD
   productId: 122225
   packageName: Lowpoly Medieval Peasants - Free - MEDIEVAL FANTASY SERIES
   packageVersion: 
   assetPath: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Trees/PT_Fruit_Tree_01_apples.prefab
   uploadId: 0
+=======
+  productId: 176809
+  packageName: Lowpoly Medieval Plague Doctor - Free Pack
+  packageVersion: 1.0
+  assetPath: Assets/Polytope Studio/Lowpoly_Environments/Prefabs/Trees/PT_Fruit_Tree_01_apples.prefab
+  uploadId: 575737
+>>>>>>> parent of 5e79ad6 (environment)

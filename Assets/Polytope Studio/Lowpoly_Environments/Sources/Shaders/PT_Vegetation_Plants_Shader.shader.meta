@@ -9,8 +9,16 @@ ShaderImporter:
   assetBundleVariant: 
 AssetOrigin:
   serializedVersion: 1
+<<<<<<< HEAD
   productId: 122225
   packageName: Lowpoly Medieval Peasants - Free - MEDIEVAL FANTASY SERIES
   packageVersion: 4.2.1
   assetPath: Assets/Polytope Studio/Lowpoly_Environments/Sources/Shaders/PT_Vegetation_Plants_Shader.shader
   uploadId: 721311
+=======
+  productId: 176809
+  packageName: Lowpoly Medieval Plague Doctor - Free Pack
+  packageVersion: 1.0
+  assetPath: Assets/Polytope Studio/Lowpoly_Environments/Sources/Shaders/PT_Vegetation_Plants_Shader.shader
+  uploadId: 575737
+>>>>>>> parent of 5e79ad6 (environment)
