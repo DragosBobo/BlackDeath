@@ -1,4 +1,7 @@
+using System.Collections;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.InputSystem;
 
 public class GameManager : MonoBehaviour
 {
@@ -14,6 +17,10 @@ public class GameManager : MonoBehaviour
 
     [Header("End Game")]
     [SerializeField] private bool freezeTimeOnEnd = true;
+    [SerializeField] private string winSceneName = "WinScene";
+    [SerializeField] private string loseSceneName = "LoseScene";
+    [Tooltip("Delay in seconds before loading Win/Lose scene (uses unscaled time).")]
+    [SerializeField] private float loadEndSceneDelay = 1.5f;
 
     public GameState State { get; private set; } = GameState.Playing;
     public float Elapsed { get; private set; }
@@ -37,6 +44,14 @@ public class GameManager : MonoBehaviour
     private void Update()
     {
         if (State != GameState.Playing) return;
+
+        // ESC = give up -> defeat (check first so it works even before peasants spawn)
+        // Use new Input System: old Input is disabled when activeInputHandler is "Input System Package"
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+        {
+            EndGame(GameState.Lost);
+            return;
+        }
 
         // Wait until the world is actually populated
         int total = PeasantController.TotalPeasants;
@@ -75,5 +90,21 @@ public class GameManager : MonoBehaviour
             Time.timeScale = 0f;
 
         Debug.Log($"[GameManager] {State} — Total={PeasantController.TotalPeasants}, Sick={PeasantController.SickPeasants}, Allowed={maxAllowedSick}");
+
+        string sceneToLoad = endState == GameState.Won ? winSceneName : loseSceneName;
+        if (!string.IsNullOrEmpty(sceneToLoad))
+            StartCoroutine(LoadEndSceneAfterDelay(sceneToLoad, loadEndSceneDelay));
+    }
+
+    private IEnumerator LoadEndSceneAfterDelay(string sceneName, float delay)
+    {
+        float elapsed = 0f;
+        while (elapsed < delay)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            yield return null;
+        }
+        Time.timeScale = 1f;
+        SceneManager.LoadScene(sceneName);
     }
 }
