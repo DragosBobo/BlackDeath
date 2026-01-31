@@ -29,6 +29,8 @@ public class RingFillController : MonoBehaviour
     static readonly int InnerId = Shader.PropertyToID("_Inner");
     static readonly int OuterId = Shader.PropertyToID("_Outer");
 
+    public void SetVisible(bool visible) => mr.enabled = visible;
+
     void Awake()
     {
         mr = GetComponent<MeshRenderer>();
@@ -89,4 +91,15 @@ public class RingFillController : MonoBehaviour
 
         OnFillComplete?.Invoke();
     }
+
+    public void SetFill01(float t01)
+    {
+        t01 = Mathf.Clamp01(t01);
+
+        if (mr) mr.enabled = true;
+
+        mat.SetFloat(InnerId, innerRadius);
+        mat.SetFloat(OuterId, Mathf.Lerp(innerRadius, outerRadiusMax, t01));
+    }
+
 }
