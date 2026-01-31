@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.AI;
+using static UnityEngine.Rendering.DebugUI;
 
 [DisallowMultipleComponent]
 public class PeasantController : MonoBehaviour
@@ -17,10 +18,17 @@ public class PeasantController : MonoBehaviour
 
     [Header("Infection")]
     [SerializeField] private bool startRandomized = true;
-    [SerializeField, Range(0f, 1f)] private float infectionProgress = 0f;
+    [SerializeField, Range(0f, 1f)] public float infectionProgress = 0f;
     [SerializeField] private float baseInfectionRatePerSecond = 0.01f;
     [SerializeField, Range(0f, 1f)] private float sickThreshold = 0.6f;
     [SerializeField, Range(0f, 1f)] private float contagiousThreshold = 0.85f;
+    [SerializeField] private float graceRemaining = 0f;
+    [SerializeField] private float graceDuration = 0f;
+    [SerializeField] private RingFillController graceRing;
+    public static int TotalPeasants { get; private set; }
+    public static int SickPeasants { get; private set; }
+    public static int ContagiousPeasants { get; private set; }
+
 
     [Header("Spreading (Only when contagious)")]
     [SerializeField] private float spreadRadius = 1.6f;
@@ -30,6 +38,8 @@ public class PeasantController : MonoBehaviour
     [Header("Reveal (Called by lamp)")]
     [SerializeField] private float revealHoldSeconds = 0.15f;
     public bool IsRevealed { get; private set; }
+    public bool IsGraceActive => graceRemaining > 0f;
+
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
@@ -40,6 +50,11 @@ public class PeasantController : MonoBehaviour
     public bool IsSick => infectionProgress >= sickThreshold;
     public bool IsContagious => infectionProgress >= contagiousThreshold;
     public float InfectionProgress => infectionProgress;
+
+    private bool countedSick;
+    private bool countedContagious;
+
+
 
     private NavMeshAgent agent;
     private float nextRepathTime;
@@ -53,6 +68,26 @@ public class PeasantController : MonoBehaviour
 
     // Cached renderer for debug coloring
     private Renderer cachedRenderer;
+
+    public static void ResetCounts()
+    {
+        TotalPeasants = 0;
+        SickPeasants = 0;
+        ContagiousPeasants = 0;
+    }
+
+    private void OnEnable()
+    {
+        TotalPeasants++;
+    }
+
+    private void OnDisable()
+    {
+        TotalPeasants = Mathf.Max(0, TotalPeasants - 1);
+
+        if (countedSick) SickPeasants = Mathf.Max(0, SickPeasants - 1);
+        if (countedContagious) ContagiousPeasants = Mathf.Max(0, ContagiousPeasants - 1);
+    }
 
     private void Awake()
     {
@@ -136,13 +171,66 @@ public class PeasantController : MonoBehaviour
     // -----------------------------------------------------
     private void TickInfection(float dt)
     {
+        if (graceRemaining > 0f)
+        {
+            graceRemaining -= dt;
+
+            float t01 = (graceDuration <= 0f) ? 0f : Mathf.Clamp01(graceRemaining / graceDuration);
+
+            if (graceRing)
+                graceRing.SetFill01(t01);
+
+            if (graceRemaining <= 0f && graceRing)
+                graceRing.SetVisible(false); // optional: hide when grace ends
+
+            return; // grace active -> stop infection tick
+        }
+
         infectionProgress = Mathf.Clamp01(infectionProgress + baseInfectionRatePerSecond * dt);
+        UpdateCountersIfCrossed();
+
     }
 
     public void AddInfection(float amount)
     {
         if (amount <= 0f) return;
         infectionProgress = Mathf.Clamp01(infectionProgress + amount);
+        UpdateCountersIfCrossed();
+
+    }
+
+    public void Cure(float seconds)
+    {
+        if (seconds <= 0f) return;
+
+        // Start/extend grace
+        graceDuration = Mathf.Max(graceDuration, seconds);
+        graceRemaining = Mathf.Max(graceRemaining, seconds);
+
+        Debug.Log(graceDuration + " " + graceRemaining);
+
+        // show full ring immediately
+        if (graceRing)
+        {
+            graceRing.SetVisible(true);     // if you added SetVisible
+            graceRing.SetFill01(1f);
+        }
+    }
+
+
+    private void UpdateCountersIfCrossed()
+    {
+        if (!countedSick && IsSick)
+        {
+            countedSick = true;
+            SickPeasants++;
+        }
+
+        if (!countedContagious && IsContagious)
+        {
+            countedContagious = true;
+            ContagiousPeasants++;
+        }
     }
 
     // -----------------------------------------------------
