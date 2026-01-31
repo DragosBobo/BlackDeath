@@ -104,13 +104,12 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.package-validation-suite": {
-      "version": "0.22.0-preview",
+      "version": "file:com.unity.package-validation-suite",
       "depth": 0,
-      "source": "registry",
+      "source": "embedded",
       "dependencies": {
         "com.unity.nuget.mono-cecil": "0.1.6-preview.2"
-      },
-      "url": "https://packages.unity.com"
+      }
     },
     "com.unity.render-pipelines.core": {
       "version": "17.3.0",
@@ -159,6 +158,16 @@
         "com.unity.render-pipelines.core": "17.3.0",
         "com.unity.searcher": "4.9.3"
       }
+    },
+    "com.unity.terrain-tools": {
+      "version": "5.3.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.modules.terrain": "1.0.0",
+        "com.unity.modules.terrainphysics": "1.0.0"
+      },
+      "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {
       "version": "1.6.0",
