@@ -93,7 +93,7 @@ public class PeasantController : MonoBehaviour
             HandleSpread();
 
         UpdateAnimation();
-        UpdateDebugColor(); // <-- NEW
+        //UpdateDebugColor(); // <-- NEW
     }
 
     // -----------------------------------------------------
