@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6015301185120203910}
-  - component: {fileID: 8285727688441803321}
+  - component: {fileID: 8586330471668154285}
   m_Layer: 0
   m_Name: GameUI
   m_TagString: Untagged
@@ -26,13 +26,13 @@ Transform:
   m_GameObject: {fileID: 1331546446238907677}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -21.4287, y: -0, z: -71.42847}
+  m_LocalPosition: {x: 0.9762, y: -0, z: -1.25519}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8285727688441803321
+--- !u!114 &8586330471668154285
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -41,8 +41,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1331546446238907677}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 80f018fbc0705764abaf3ba3717b89bb, type: 3}
+  m_Script: {fileID: 11500000, guid: 0dc60f7fb5f3a7945a421e513db0a7fb, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: '::'
+  m_EditorClassIdentifier: Assembly-CSharp::PeasantStatsUI
   statsText: {fileID: 0}
+  gameManager: {fileID: 0}
   refreshInterval: 0.25

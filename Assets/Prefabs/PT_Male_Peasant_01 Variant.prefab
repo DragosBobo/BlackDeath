@@ -334,6 +334,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CharacterProximity
   myRing: {fileID: 0}
   isPlayer: 0
+  graceLength: 1
 --- !u!1001 &6368284772144841126
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -342,6 +343,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 647434643797114740, guid: 17e8e92cc6105f84d88131965592c613, type: 3}
+      propertyPath: infectionProgress
+      value: 0.526
+      objectReference: {fileID: 0}
     - target: {fileID: 8576741885256897828, guid: 17e8e92cc6105f84d88131965592c613, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3.9556737
