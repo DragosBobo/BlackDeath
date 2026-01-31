@@ -33,7 +33,7 @@ public class RingFillController : MonoBehaviour
     {
         mr = GetComponent<MeshRenderer>();
         mat = mr.material; // unique instance
-        ResetVisual();
+        ResetVisual(true);
     }
 
     public void ResetVisual(bool force = false)
