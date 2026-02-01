@@ -63,6 +63,12 @@ public class PeasantStatsUI : MonoBehaviour
             sb.Append("State: (no GameManager)");
         }
 
+        // Debug line so you can verify your static counters match reality
+        sb.Append("Static (dbg) T:")
+          .Append(totalStatic).Append(" S:")
+          .Append(sickStatic).Append(" C:")
+          .Append(contStatic);
+
         statsText.text = sb.ToString();
     }
 }
