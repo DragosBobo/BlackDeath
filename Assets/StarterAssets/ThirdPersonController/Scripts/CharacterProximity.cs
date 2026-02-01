@@ -4,7 +4,6 @@ public class CharacterProximity : MonoBehaviour
 {
     [SerializeField] RingDrawer myRing;
     [SerializeField] bool isPlayer = false;
-    [SerializeField] float graceLength = 1.0f;
 
     Transform myRoot;
 
@@ -43,63 +42,45 @@ public class CharacterProximity : MonoBehaviour
             myRing.SetVisible(true);
         }
 
-        var npcData = otherRoot.GetComponent<PeasantController>();
-        if(npcData != null && npcData.InfectionProgress > 0.6)
+        var npcFill = otherRoot.GetComponentInChildren<RingFillController>(true);
+        var npcRing = otherRoot.GetComponentInChildren<RingDrawer>(true);
+        if (npcRing)
         {
-            var npcFill = otherRoot.GetComponentInChildren<RingFillController>(true);
-            var npcRing = otherRoot.GetComponentInChildren<RingDrawer>(true);
-            if (npcRing)
-            {
-                npcRing.SetColor(Color.red);
-                npcRing.SetVisible(true);
-            }
-
-            if (npcFill && npcFill.Completed)
-            {
-                // Already completed: show NPC green ring, do NOT retrigger
-                if (npcRing)
-                {
-                    npcRing.SetColor(Color.green);
-                    npcRing.SetVisible(true);
-                }
-            }
-            else
-            {
-                // Not completed: NPC ring red and start fill
-                if (npcRing)
-                {
-                    npcRing.SetColor(Color.red);
-                    npcRing.SetVisible(true);
-                }
-
-                if (npcFill)
-                {
-                    npcFill.startColor = Color.red;
-                    npcFill.endColor = Color.green;
-
-                    npcFill.ResetVisual(); // allowed because not completed
-                    npcFill.OnFillComplete = () =>
-                    {
-                        if (npcRing)
-                        {
-                            npcRing.SetColor(Color.green);
-                            npcData.Cure(graceLength);
-                        }
-                    };
-                    npcFill.StartFill();
-                }
-            }
+            npcRing.SetColor(Color.red);
+            npcRing.SetVisible(true);
         }
-        else
+
+        if (npcFill && npcFill.Completed)
         {
-            var npcRing = otherRoot.GetComponentInChildren<RingDrawer>(true);
+            // Already completed: show NPC green ring, do NOT retrigger
             if (npcRing)
             {
                 npcRing.SetColor(Color.green);
                 npcRing.SetVisible(true);
             }
         }
+        else
+        {
+            // Not completed: NPC ring red and start fill
+            if (npcRing)
+            {
+                npcRing.SetColor(Color.red);
+                npcRing.SetVisible(true);
+            }
 
+            if (npcFill)
+            {
+                npcFill.startColor = Color.red;
+                npcFill.endColor = Color.green;
+
+                npcFill.ResetVisual(); // allowed because not completed
+                npcFill.OnFillComplete = () =>
+                {
+                    if (npcRing) npcRing.SetColor(Color.green);
+                };
+                npcFill.StartFill();
+            }
+        }
     }
 
     void OnTriggerExit(Collider other)

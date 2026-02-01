@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.AI;
-using static UnityEngine.Rendering.DebugUI;
 
 [DisallowMultipleComponent]
 public class PeasantController : MonoBehaviour
@@ -22,24 +21,35 @@ public class PeasantController : MonoBehaviour
     [SerializeField] private float baseInfectionRatePerSecond = 0.01f;
     [SerializeField, Range(0f, 1f)] private float sickThreshold = 0.6f;
     [SerializeField, Range(0f, 1f)] private float contagiousThreshold = 0.85f;
+
+    [Header("Cure / Grace")]
     [SerializeField] private float graceRemaining = 0f;
     [SerializeField] private float graceDuration = 0f;
     [SerializeField] private RingFillController graceRing;
+    public bool IsGraceActive => graceRemaining > 0f;
+
+    // Global counters (CURRENT, can go up and down)
     public static int TotalPeasants { get; private set; }
     public static int SickPeasants { get; private set; }
     public static int ContagiousPeasants { get; private set; }
-
 
     [Header("Spreading (Only when contagious)")]
     [SerializeField] private float spreadRadius = 1.6f;
     [SerializeField] private float spreadRatePerTick = 0.04f;
     [SerializeField] private float spreadTickInterval = 0.5f;
 
+    [Header("Spread Randomization (per NPC instance)")]
+    [SerializeField, Range(1, 10)] private int spreadPowerMin = 1;
+    [SerializeField, Range(1, 10)] private int spreadPowerMax = 10;
+
+    // Exposed in Inspector (runtime assigned)
+    [SerializeField, Tooltip("Randomized on spawn. Multiplies spreadRatePerTick. (1..10)")]
+    private int spreadPower = 1;
+    public int SpreadPower => spreadPower;
+
     [Header("Reveal (Called by lamp)")]
     [SerializeField] private float revealHoldSeconds = 0.15f;
     public bool IsRevealed { get; private set; }
-    public bool IsGraceActive => graceRemaining > 0f;
-
 
     [Header("Animation")]
     [SerializeField] private Animator animator;
@@ -47,14 +57,18 @@ public class PeasantController : MonoBehaviour
     [SerializeField] private float walkSpeedThreshold = 0.08f;
     [SerializeField] private float walkSpeedHysteresis = 0.03f;
 
+    [Header("VFX")]
+    [SerializeField] private ParticleSystem sickVfx;
+    [SerializeField] private bool playSickVfxOnce = true;
+    private bool sickVfxPlayed;
+
     public bool IsSick => infectionProgress >= sickThreshold;
     public bool IsContagious => infectionProgress >= contagiousThreshold;
     public float InfectionProgress => infectionProgress;
 
-    private bool countedSick;
-    private bool countedContagious;
-
-
+    // Current state tracking (so counters can go DOWN after healing)
+    private bool isSickCurrent;
+    private bool isContagiousCurrent;
 
     private NavMeshAgent agent;
     private float nextRepathTime;
@@ -65,9 +79,6 @@ public class PeasantController : MonoBehaviour
 
     private int isWalkingHash;
     private bool isWalkingCached;
-
-    // Cached renderer for debug coloring
-    private Renderer cachedRenderer;
 
     public static void ResetCounts()
     {
@@ -85,8 +96,9 @@ public class PeasantController : MonoBehaviour
     {
         TotalPeasants = Mathf.Max(0, TotalPeasants - 1);
 
-        if (countedSick) SickPeasants = Mathf.Max(0, SickPeasants - 1);
-        if (countedContagious) ContagiousPeasants = Mathf.Max(0, ContagiousPeasants - 1);
+        // Remove from CURRENT counters if this peasant was currently in those states
+        if (isSickCurrent) SickPeasants = Mathf.Max(0, SickPeasants - 1);
+        if (isContagiousCurrent) ContagiousPeasants = Mathf.Max(0, ContagiousPeasants - 1);
     }
 
     private void Awake()
@@ -99,12 +111,26 @@ public class PeasantController : MonoBehaviour
         }
 
         if (!animator) animator = GetComponentInChildren<Animator>();
-        cachedRenderer = GetComponentInChildren<Renderer>();
-
         isWalkingHash = Animator.StringToHash(isWalkingParam);
+
+        if (!sickVfx) sickVfx = GetComponentInChildren<ParticleSystem>(true);
+        if (sickVfx)
+        {
+            // Prevent any "plays on spawn" behavior
+            sickVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        }
 
         if (startRandomized)
             infectionProgress = Mathf.Clamp01(infectionProgress + Random.Range(0f, 0.15f));
+
+        // Per-instance spread strength (inclusive)
+        int min = Mathf.Clamp(spreadPowerMin, 1, 10);
+        int max = Mathf.Clamp(spreadPowerMax, 1, 10);
+        if (max < min) (min, max) = (max, min);
+        spreadPower = Random.Range(min, max + 1);
+
+        // Initialize CURRENT state + counters WITHOUT firing VFX
+        SyncStateAndCounts(forceInit: true);
 
         ScheduleNextRepath();
         nextSpreadTickTime = Time.time + Random.Range(0f, spreadTickInterval);
@@ -128,29 +154,7 @@ public class PeasantController : MonoBehaviour
             HandleSpread();
 
         UpdateAnimation();
-        //UpdateDebugColor(); // <-- NEW
     }
-
-    // -----------------------------------------------------
-    // DEBUG: Infection Color Visualization
-    // -----------------------------------------------------
-    //private void UpdateDebugColor()
-    //{
-        //if (!cachedRenderer) return;
-
-        //if (IsContagious)
-        //{
-           // cachedRenderer.material.color = Color.red;
-        //}
-        //else if (IsSick)
-        //{
-            //cachedRenderer.material.color = Color.yellow;
-        //}
-        //else
-        //{
-          //  cachedRenderer.material.color = Color.white;
-        //}
-    //}
 
     // -----------------------------------------------------
     // Public: Called by lamp
@@ -181,56 +185,98 @@ public class PeasantController : MonoBehaviour
                 graceRing.SetFill01(t01);
 
             if (graceRemaining <= 0f && graceRing)
-                graceRing.SetVisible(false); // optional: hide when grace ends
+                graceRing.SetVisible(false);
 
             return; // grace active -> stop infection tick
         }
 
         infectionProgress = Mathf.Clamp01(infectionProgress + baseInfectionRatePerSecond * dt);
-        UpdateCountersIfCrossed();
-
+        SyncStateAndCounts(); // can increase counts + trigger VFX when crossing sick threshold
     }
 
     public void AddInfection(float amount)
     {
         if (amount <= 0f) return;
-        infectionProgress = Mathf.Clamp01(infectionProgress + amount);
-        UpdateCountersIfCrossed();
 
+        infectionProgress = Mathf.Clamp01(infectionProgress + amount);
+        SyncStateAndCounts(); // can increase counts + trigger VFX when crossing sick threshold
     }
 
+    /// <summary>
+    /// Healing that actually reduces infectionProgress (so Sick/Contagious can go DOWN).
+    /// Call this when the player heals.
+    /// </summary>
+    public void HealInfection(float amount)
+    {
+        if (amount <= 0f) return;
+
+        infectionProgress = Mathf.Clamp01(infectionProgress - amount);
+        SyncStateAndCounts(); // can decrease counts if we drop below thresholds
+    }
+
+    /// <summary>
+    /// Optional: keep your grace mechanic (pauses infection progression).
+    /// Does not reduce infection by itself.
+    /// </summary>
     public void Cure(float seconds)
     {
         if (seconds <= 0f) return;
 
-        // Start/extend grace
         graceDuration = Mathf.Max(graceDuration, seconds);
         graceRemaining = Mathf.Max(graceRemaining, seconds);
 
-        Debug.Log(graceDuration + " " + graceRemaining);
-
-        // show full ring immediately
         if (graceRing)
         {
-            graceRing.SetVisible(true);     // if you added SetVisible
+            graceRing.SetVisible(true);
             graceRing.SetFill01(1f);
         }
     }
 
-
-    private void UpdateCountersIfCrossed()
+    // -----------------------------------------------------
+    // State + counters that can go UP/DOWN
+    // -----------------------------------------------------
+    private void SyncStateAndCounts(bool forceInit = false)
     {
-        if (!countedSick && IsSick)
+        bool sickNow = IsSick;
+        bool contagiousNow = IsContagious;
+
+        if (forceInit)
         {
-            countedSick = true;
-            SickPeasants++;
+            isSickCurrent = sickNow;
+            isContagiousCurrent = contagiousNow;
+
+            if (isSickCurrent) SickPeasants++;
+            if (isContagiousCurrent) ContagiousPeasants++;
+            return;
         }
 
-        if (!countedContagious && IsContagious)
+        // Sick transitions
+        if (sickNow != isSickCurrent)
         {
-            countedContagious = true;
-            ContagiousPeasants++;
+            // transition only
+            if (!isSickCurrent && sickNow)
+                TriggerSickVfx(); // only when becoming sick during gameplay
+
+            isSickCurrent = sickNow;
+            SickPeasants = Mathf.Max(0, SickPeasants + (isSickCurrent ? 1 : -1));
         }
+
+        // Contagious transitions
+        if (contagiousNow != isContagiousCurrent)
+        {
+            isContagiousCurrent = contagiousNow;
+            ContagiousPeasants = Mathf.Max(0, ContagiousPeasants + (isContagiousCurrent ? 1 : -1));
+        }
+    }
+
+    private void TriggerSickVfx()
+    {
+        if (!sickVfx) return;
+        if (playSickVfxOnce && sickVfxPlayed) return;
+
+        sickVfxPlayed = true;
+        sickVfx.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+        sickVfx.Play(true);
     }
 
     // -----------------------------------------------------
@@ -244,6 +290,8 @@ public class PeasantController : MonoBehaviour
         int count = Physics.OverlapSphereNonAlloc(transform.position, spreadRadius, spreadHits, peasantLayerMask);
         if (count <= 0) return;
 
+        float amount = spreadRatePerTick * spreadPower;
+
         for (int i = 0; i < count; i++)
         {
             Collider c = spreadHits[i];
@@ -252,7 +300,7 @@ public class PeasantController : MonoBehaviour
             PeasantController other = c.GetComponentInParent<PeasantController>();
             if (!other || other == this) continue;
 
-            other.AddInfection(spreadRatePerTick);
+            other.AddInfection(amount);
         }
     }
 
@@ -331,8 +379,6 @@ public class PeasantController : MonoBehaviour
 
         revealTimer -= Time.deltaTime;
         if (revealTimer <= 0f)
-        {
             IsRevealed = false;
-        }
     }
 }
